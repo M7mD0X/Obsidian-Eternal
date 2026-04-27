@@ -214,7 +214,7 @@ local Library = {
     OriginalMinSize = Vector2.new(480, 360),
     MinSize = Vector2.new(480, 360),
     DPIScale = 1,
-    CornerRadius = 4,
+    CornerRadius = 6,
     CornerRadiusDropdown = false, -- Temporary
 
     IsLightTheme = false,
@@ -313,7 +313,7 @@ local Templates = {
         Resizable = true,
         SearchbarSize = UDim2.fromScale(1, 1),
         GlobalSearch = false,
-        CornerRadius = 4,
+        CornerRadius = 6,
         NotifySide = "Right",
         ShowCustomCursor = true,
         Font = Enum.Font.Code,
@@ -4901,8 +4901,94 @@ do
                 Button:Destroy()
             end
             table.clear(Buttons)
-
+            
             local Count = 0
+            
+            
+            if Info.Multi then
+                -- Row frame
+                local SelectRow = New("Frame", {
+                    BackgroundTransparency = 1,
+                    LayoutOrder = -999, 
+                    Size = UDim2.new(1, 0, 0, 22),
+                    Parent = MenuTable.Menu,
+                })
+                New("UIListLayout", {
+                    FillDirection = Enum.FillDirection.Horizontal,
+                    HorizontalFlex = Enum.UIFlexAlignment.Fill,
+                    Padding = UDim.new(0, 4),
+                    Parent = SelectRow,
+                })
+                New("UIPadding", {
+                    PaddingLeft = UDim.new(0, 5),
+                    PaddingRight = UDim.new(0, 5),
+                    PaddingTop = UDim.new(0, 1),
+                    PaddingBottom = UDim.new(0, 1),
+                    Parent = SelectRow,
+                })
+              
+                local function MakeCtrlBtn(Text, Parent)
+                    local Btn = New("TextButton", {
+                        BackgroundColor3 = "MainColor",
+                        Size = UDim2.fromScale(0.5, 1),
+                        Text = Text,
+                        TextSize = 13,
+                        TextTransparency = 0.35,
+                        Parent = Parent,
+                    })
+                    New("UIStroke", {
+                        Color = "OutlineColor",
+                        Parent = Btn,
+                    })
+                    New("UICorner", {
+                        CornerRadius = UDim.new(0, Library.CornerRadius / 2),
+                        Parent = Btn,
+                    })
+                    -- Hover effect
+                    Btn.MouseEnter:Connect(function()
+                        TweenService:Create(Btn, Library.TweenInfo, {
+                            TextTransparency = 0,
+                            BackgroundColor3 = Library:GetBetterColor(Library.Scheme.MainColor, 8),
+                        }):Play()
+                    end)
+                    Btn.MouseLeave:Connect(function()
+                        TweenService:Create(Btn, Library.TweenInfo, {
+                            TextTransparency = 0.35,
+                            BackgroundColor3 = Library.Scheme.MainColor,
+                        }):Play()
+                    end)
+                    return Btn
+                end
+    
+                local SelectAllBtn   = MakeCtrlBtn("Select All", SelectRow)
+                local DeselectAllBtn = MakeCtrlBtn("Clear",      SelectRow)
+    
+                -- Select All
+                SelectAllBtn.MouseButton1Click:Connect(function()
+                    local AllVals = {}
+                    for _, v in ipairs(Dropdown.Values) do
+                        if not table.find(Dropdown.DisabledValues, v) then
+                            table.insert(AllVals, v)
+                        end
+                    end
+                    Dropdown:SetValue(AllVals)
+                end)
+    
+                -- Deselect All / Clear
+                DeselectAllBtn.MouseButton1Click:Connect(function()
+                    if not Info.AllowNull and not (Info.Multi) then
+                        return
+                    end
+                    Dropdown:SetValue({})
+                    -- MenuTable:Close()
+                end)
+    
+                Buttons[SelectRow] = { UpdateButton = function() end }
+                Count += 1
+            end
+            
+            
+            
             for _, Value in Values do
                 local FormattedValue = tostring(Info.FormatListValue and Info.FormatListValue(Value) or Value)
                 if SearchBox and not FormattedValue:lower():match(SearchBox.Text:lower()) then
